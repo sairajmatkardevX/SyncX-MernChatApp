@@ -36,13 +36,11 @@ const newGroupChat = TryCatch(async (req, res, next) => {
     message: "Group Created",
   });
 });
-
 const getMyChats = TryCatch(async (req, res, next) => {
   const chats = await Chat.find({ members: req.user }).populate(
     "members",
     "name avatar"
   );
-
   const transformedChats = chats.map(({ _id, name, members, groupChat }) => {
     const otherMember = getOtherMember(members, req.user);
 
