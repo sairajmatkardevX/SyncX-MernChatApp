@@ -2,7 +2,7 @@ import { TryCatch } from "../middlewares/error.js";
 import { ErrorHandler } from "../utils/utility.js";
 import { Chat } from "../models/chat.js";
 import {
-  deletFilesFromCloudinary,
+  deleteFilesFromCloudinary,
   emitEvent,
   uploadFilesToCloudinary,
 } from "../utils/features.js";
@@ -359,7 +359,7 @@ const deleteChat = TryCatch(async (req, res, next) => {
   );
 
   await Promise.all([
-    deletFilesFromCloudinary(public_ids),
+    deleteFilesFromCloudinary(public_ids),
     chat.deleteOne(),
     Message.deleteMany({ chat: chatId }),
   ]);

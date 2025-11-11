@@ -19,11 +19,11 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import React, { Suspense, lazy, memo, useEffect, useState } from "react";
+import { Suspense, lazy, memo, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { LayoutLoader } from "../components/layouts/Loaders";
 import AvatarCard from "../components/shared/AvatarCard";
-import { Link } from "../components/styles/StyledComponents";
+import { Link } from "../components/styles/StyledComponent";
 import { bgGradient, matBlack } from "../constants/color";
 import { useDispatch, useSelector } from "react-redux";
 import UserItem from "../components/shared/UserItem";
@@ -38,10 +38,10 @@ import {
 import { setIsAddMember } from "../redux/reducers/misc";
 
 const ConfirmDeleteDialog = lazy(() =>
-  import("../components/dialogs/ConfirmDeleteDialog")
+  import("../components/dialogues/ConfirmDeleteDialogue")
 );
 const AddMemberDialog = lazy(() =>
-  import("../components/dialogs/AddMemberDialog")
+  import("../components/dialogues/AddMemberDialogue")
 );
 
 const Groups = () => {

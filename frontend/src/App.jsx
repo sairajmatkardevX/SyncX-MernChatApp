@@ -1,5 +1,5 @@
-import React, { Suspense, lazy, useEffect, useState } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Suspense, lazy, useEffect, useState } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import ProtectRoute from "./components/auth/ProtectRoute";
 import { LayoutLoader } from "./components/layouts/Loaders";
 import axios from "axios";
@@ -35,7 +35,6 @@ const App = () => {
         dispatch(userExists(data.user));
       })
       .catch((err) => {
-        // 401 is expected when no user is logged in - this is normal
         dispatch(userNotExists());
       })
       .finally(() => {
@@ -51,45 +50,52 @@ const App = () => {
     <BrowserRouter>
       <Suspense fallback={<LayoutLoader />}>
         <Routes>
-          {/* Routes that require socket connection (only when user exists) */}
-          {user && (
-            <Route
-              element={
-                <SocketProvider>
-                  <ProtectRoute user={user} />
-                </SocketProvider>
-              }
-            >
-              <Route path="/" element={<Home />} />
-              <Route path="/chat/:chatId" element={<Chat />} />
-              <Route path="/groups" element={<Groups />} />
-            </Route>
-          )}
-
-          {/* Routes that don't require socket connection */}
-          {!user && (
-            <Route element={<ProtectRoute user={user} />}>
-              <Route path="/" element={<Home />} />
-              <Route path="/chat/:chatId" element={<Chat />} />
-              <Route path="/groups" element={<Groups />} />
-            </Route>
-          )}
-
-          <Route
-            path="/login"
-            element={
-              <ProtectRoute user={!user} redirect="/">
-                <Login />
-              </ProtectRoute>
-            }
-          />
-
+          {/* Always available routes */}
+          <Route path="/login" element={user ? <Navigate to="/" /> : <Login />} />
           <Route path="/admin" element={<AdminLogin />} />
           <Route path="/admin/dashboard" element={<Dashboard />} />
           <Route path="/admin/users" element={<UserManagement />} />
           <Route path="/admin/chats" element={<ChatManagement />} />
           <Route path="/admin/messages" element={<MessagesManagement />} />
 
+          {/* Protected routes */}
+          <Route path="/" element={
+            user ? (
+              <SocketProvider>
+                <ProtectRoute user={user}>
+                  <Home />
+                </ProtectRoute>
+              </SocketProvider>
+            ) : (
+              <Navigate to="/login" />
+            )
+          } />
+          
+          <Route path="/chat/:chatId" element={
+            user ? (
+              <SocketProvider>
+                <ProtectRoute user={user}>
+                  <Chat />
+                </ProtectRoute>
+              </SocketProvider>
+            ) : (
+              <Navigate to="/login" />
+            )
+          } />
+          
+          <Route path="/groups" element={
+            user ? (
+              <SocketProvider>
+                <ProtectRoute user={user}>
+                  <Groups />
+                </ProtectRoute>
+              </SocketProvider>
+            ) : (
+              <Navigate to="/login" />
+            )
+          } />
+
+          {/* Catch all route */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>

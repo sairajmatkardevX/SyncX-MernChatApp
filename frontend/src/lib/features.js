@@ -18,9 +18,7 @@ const fileFormat = (url = "") => {
   return "file";
 };
 
-// https://res.cloudinary.com/dj5q966nb/image/upload/dpr_auto/w_200/v1710344436/fafceddc-2845-4ae7-a25a-632f01922b4d.png
 
-// /dpr_auto/w_200
 const transformImage = (url = "", width = 100) => {
   const newUrl = url.replace("upload/", `upload/dpr_auto/w_${width}/`);
 

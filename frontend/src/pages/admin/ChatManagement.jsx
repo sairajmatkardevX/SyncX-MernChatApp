@@ -1,7 +1,7 @@
-import { useFetchData } from "6pp";
+import { useFetchData } from "../../hooks/hook";
 import { Avatar, Skeleton, Stack } from "@mui/material";
 import React, { useEffect, useState } from "react";
-import AdminLayout from "../../components/layout/AdminLayout";
+import AdminLayout from "../../components/layouts/AdminLayout";
 import AvatarCard from "../../components/shared/AvatarCard";
 import Table from "../../components/shared/Table";
 import { server } from "../../constants/config";

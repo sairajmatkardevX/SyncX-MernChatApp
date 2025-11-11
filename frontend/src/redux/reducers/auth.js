@@ -33,7 +33,8 @@ const authSlice = createSlice({
         toast.error(action.error.message);
       })
       .addCase(getAdmin.fulfilled, (state, action) => {
-        if (action.payload) {
+        // action.payload is { admin: true } object, not a boolean
+        if (action.payload?.admin === true) {
           state.isAdmin = true;
         } else {
           state.isAdmin = false;

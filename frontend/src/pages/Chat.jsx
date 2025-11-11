@@ -5,15 +5,15 @@ import React, {
   useRef,
   useState,
 } from "react";
-import AppLayout from "../components/layout/AppLayout";
+import AppLayout from "../components/layouts/AppLayout";
 import { IconButton, Skeleton, Stack } from "@mui/material";
 import { grayColor, orange } from "../constants/color";
 import {
   AttachFile as AttachFileIcon,
   Send as SendIcon,
 } from "@mui/icons-material";
-import { InputBox } from "../components/styles/StyledComponents";
-import FileMenu from "../components/dialogs/FileMenu";
+import { InputBox } from "../components/styles/StyledComponent";
+import FileMenu from "../components/dialogues/FileMenu";
 import MessageComponent from "../components/shared/MessageComponent";
 import { getSocket } from "../socket";
 import {
@@ -30,7 +30,7 @@ import { useInfiniteScrollTop } from "6pp";
 import { useDispatch } from "react-redux";
 import { setIsFileMenu } from "../redux/reducers/misc";
 import { removeNewMessagesAlert } from "../redux/reducers/chat";
-import { TypingLoader } from "../components/layout/Loaders";
+import { TypingLoader } from "../components/layouts/Loaders";
 import { useNavigate } from "react-router-dom";
 
 const Chat = ({ chatId, user }) => {

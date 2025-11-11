@@ -1,4 +1,4 @@
-import { useFetchData } from "6pp";
+import { useFetchData } from "../../hooks/hook";
 import {
   AdminPanelSettings as AdminPanelSettingsIcon,
   Group as GroupIcon,
@@ -15,22 +15,26 @@ import {
   Typography,
 } from "@mui/material";
 import moment from "moment";
-import React from "react";
-import AdminLayout from "../../components/layout/AdminLayout";
+import { useEffect } from "react"; // ADD useEffect
+import AdminLayout from "../../components/layouts/AdminLayout";
 import { DoughnutChart, LineChart } from "../../components/specific/Charts";
 import {
   CurveButton,
   SearchField,
-} from "../../components/styles/StyledComponents";
+} from "../../components/styles/StyledComponent";
 import { matBlack } from "../../constants/color";
 import { server } from "../../constants/config";
 import { useErrors } from "../../hooks/hook";
 
 const Dashboard = () => {
+  console.log("📊 Dashboard component mounted"); // ADD THIS
+
   const { loading, data, error } = useFetchData(
     `${server}/api/v1/admin/stats`,
     "dashboard-stats"
   );
+
+  console.log("📊 Dashboard API call - loading:", loading, "error:", error, "data:", data); // ADD THIS
 
   const { stats } = data || {};
 
@@ -40,6 +44,11 @@ const Dashboard = () => {
       error: error,
     },
   ]);
+
+  // ADD THIS useEffect to see when component updates
+  useEffect(() => {
+    console.log("📊 Dashboard state updated - loading:", loading, "error:", error);
+  }, [loading, error]);
 
   const Appbar = (
     <Paper
@@ -93,6 +102,8 @@ const Dashboard = () => {
       />
     </Stack>
   );
+
+  console.log("📊 Dashboard rendering - stats:", stats); // ADD THIS
 
   return (
     <AdminLayout>

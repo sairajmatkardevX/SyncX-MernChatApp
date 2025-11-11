@@ -1,8 +1,8 @@
-import { useFetchData } from "6pp";
-import { Avatar, Box, Stack } from "@mui/material";
+import { useFetchData } from "../../hooks/hook";
+import { Avatar, Box, Stack, Skeleton } from "@mui/material"; // ✅ ADD Skeleton
 import moment from "moment";
-import React, { useEffect, useState } from "react";
-import AdminLayout from "../../components/layout/AdminLayout";
+import { useEffect, useState } from "react";
+import AdminLayout from "../../components/layouts/AdminLayout";
 import RenderAttachment from "../../components/shared/RenderAttachment";
 import Table from "../../components/shared/Table";
 import { server } from "../../constants/config";
@@ -25,12 +25,12 @@ const columns = [
       const { attachments } = params.row;
 
       return attachments?.length > 0
-        ? attachments.map((i) => {
+        ? attachments.map((i, index) => { // ✅ ADD index for key
             const url = i.url;
             const file = fileFormat(url);
 
             return (
-              <Box>
+              <Box key={index}> // ✅ ADD key prop
                 <a
                   href={url}
                   download
@@ -47,7 +47,6 @@ const columns = [
         : "No Attachments";
     },
   },
-
   {
     field: "content",
     headerName: "Content",
@@ -120,7 +119,7 @@ const MessageManagement = () => {
   return (
     <AdminLayout>
       {loading ? (
-        <Skeleton height={"100vh"} />
+        <Skeleton height={"100vh"} /> // ✅ Now Skeleton is imported
       ) : (
         <Table
           heading={"All Messages"}

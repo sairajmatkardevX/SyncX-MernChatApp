@@ -4,22 +4,18 @@ import axios from "axios";
 
 const adminLogin = createAsyncThunk("admin/login", async (secretKey) => {
   try {
-    const config = {
-      withCredentials: true,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    };
-
     const { data } = await axios.post(
       `${server}/api/v1/admin/verify`,
       { secretKey },
-      config
+      { 
+        withCredentials: true,
+      }
     );
 
+    // Return only the success message string for toast
     return data.message;
   } catch (error) {
-    throw error.response.data.message;
+    throw error.response?.data?.message || "Admin login failed";
   }
 });
 
@@ -29,9 +25,10 @@ const getAdmin = createAsyncThunk("admin/getAdmin", async () => {
       withCredentials: true,
     });
 
+    // Return only the admin boolean value
     return data.admin;
   } catch (error) {
-    throw error.response.data.message;
+    throw error.response?.data?.message || "Failed to get admin status";
   }
 });
 
@@ -41,9 +38,10 @@ const adminLogout = createAsyncThunk("admin/logout", async () => {
       withCredentials: true,
     });
 
+    // Return only the success message string for toast
     return data.message;
   } catch (error) {
-    throw error.response.data.message;
+    throw error.response?.data?.message || "Admin logout failed";
   }
 });
 

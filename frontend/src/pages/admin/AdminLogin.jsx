@@ -6,11 +6,10 @@ import {
   TextField,
   Typography
 } from "@mui/material";
-import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
 import { bgGradient } from "../../constants/color";
-import { adminLogin, getAdmin } from "../../redux/thunks/admin";
+import { adminLogin} from "../../redux/thunks/admin";
 
 const AdminLogin = () => {
   const { isAdmin } = useSelector((state) => state.auth);
@@ -24,9 +23,6 @@ const AdminLogin = () => {
     dispatch(adminLogin(secretKey.value));
   };
 
-  useEffect(() => {
-    dispatch(getAdmin());
-  }, [dispatch]);
 
   if (isAdmin) return <Navigate to="/admin/dashboard" />;
 
