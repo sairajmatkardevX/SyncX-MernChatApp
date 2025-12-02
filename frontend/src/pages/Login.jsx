@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -6,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useToast } from '@/hooks/use-toast';
 import { useDispatch } from 'react-redux';
 import { userExists } from '@/redux/reducers/auth';
 import { 
@@ -16,16 +16,18 @@ import {
   User,
   Lock,
   UserPlus,
-  LogIn
+  LogIn,
+  AlertCircle
 } from 'lucide-react';
 import axios from 'axios';
 import { server } from '../constants/config';
-import { useTheme } from "next-themes";
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     bio: '',
@@ -34,7 +36,7 @@ const Login = () => {
     avatar: null
   });
   const [avatarPreview, setAvatarPreview] = useState('');
-  const { theme } = useTheme();
+  const { toast } = useToast();
 
   const dispatch = useDispatch();
 
@@ -42,22 +44,95 @@ const Login = () => {
     setIsLogin(!isLogin);
     setFormData({ name: '', bio: '', username: '', password: '', avatar: null });
     setAvatarPreview('');
+    setError('');
   };
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    if (error) setError(''); // Clear error when user starts typing
   };
 
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Image size should be less than 5MB');
+        toast({
+          variant: "destructive",
+          title: "File too large",
+          description: "Please select an image smaller than 5MB",
+        });
+        return;
+      }
+      
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setError('Please select a valid image file');
+        toast({
+          variant: "destructive",
+          title: "Invalid file type",
+          description: "Please select an image file (JPG, PNG, etc.)",
+        });
+        return;
+      }
+
       setFormData(prev => ({ ...prev, avatar: file }));
       setAvatarPreview(URL.createObjectURL(file));
+      setError('');
     }
+  };
+
+  const validateForm = () => {
+    if (!isLogin) {
+      if (!formData.name.trim()) {
+        setError('Please enter your full name');
+        return false;
+      }
+      if (formData.name.length < 3) {
+        setError('Name must be at least 3 characters long');
+        return false;
+      }
+      if (!formData.bio.trim()) {
+        setError('Please enter a bio');
+        return false;
+      }
+    }
+
+    if (!formData.username.trim()) {
+      setError('Please enter your username');
+      return false;
+    }
+    if (formData.username.length < 3) {
+      setError('Username must be at least 3 characters long');
+      return false;
+    }
+
+    if (!formData.password) {
+      setError('Please enter your password');
+      return false;
+    }
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      return false;
+    }
+
+    return true;
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setError('');
+
+    if (!validateForm()) {
+      toast({
+        variant: "destructive",
+        title: "Validation Error",
+        description: error,
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -71,9 +146,19 @@ const Login = () => {
       );
       
       dispatch(userExists(data.user));
-      console.log('Login successful');
+      toast({
+        title: "Welcome back!",
+        description: "Login successful",
+      });
     } catch (error) {
-      console.error('Login failed:', error?.response?.data?.message);
+      const errorMessage = error?.response?.data?.message || 'Login failed. Please try again.';
+      setError(errorMessage);
+      toast({
+        variant: "destructive",
+        title: "Login Failed",
+        description: errorMessage,
+      });
+      console.error('Login failed:', errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -81,6 +166,17 @@ const Login = () => {
 
   const handleSignUp = async (e) => {
     e.preventDefault();
+    setError('');
+
+    if (!validateForm()) {
+      toast({
+        variant: "destructive",
+        title: "Validation Error",
+        description: error,
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     const formDataToSend = new FormData();
@@ -98,9 +194,19 @@ const Login = () => {
       );
 
       dispatch(userExists(data.user));
-      console.log('Sign up successful');
+      toast({
+        title: "Account created!",
+        description: "Welcome to Chattu",
+      });
     } catch (error) {
-      console.error('Sign up failed:', error?.response?.data?.message);
+      const errorMessage = error?.response?.data?.message || 'Sign up failed. Please try again.';
+      setError(errorMessage);
+      toast({
+        variant: "destructive",
+        title: "Sign Up Failed",
+        description: errorMessage,
+      });
+      console.error('Sign up failed:', errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -108,7 +214,7 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Animated background elements - Theme aware */}
+      {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl"></div>
@@ -140,6 +246,22 @@ const Login = () => {
           </CardHeader>
 
           <CardContent className="space-y-4">
+            {/* Error Alert */}
+            <AnimatePresence>
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                >
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <AnimatePresence mode="wait">
               <motion.form
                 key={isLogin ? 'login' : 'signup'}
@@ -176,6 +298,7 @@ const Login = () => {
                         />
                       </label>
                     </div>
+                    <p className="text-xs text-muted-foreground">Click to upload profile picture</p>
                   </motion.div>
                 )}
 
@@ -183,7 +306,7 @@ const Login = () => {
                 {!isLogin && (
                   <div className="space-y-2">
                     <Label htmlFor="name" className="text-sm font-medium text-card-foreground">
-                      Full Name
+                      Full Name *
                     </Label>
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
@@ -203,7 +326,7 @@ const Login = () => {
                 {!isLogin && (
                   <div className="space-y-2">
                     <Label htmlFor="bio" className="text-sm font-medium text-card-foreground">
-                      Bio
+                      Bio *
                     </Label>
                     <Input
                       id="bio"
@@ -218,7 +341,7 @@ const Login = () => {
                 {/* Username Field */}
                 <div className="space-y-2">
                   <Label htmlFor="username" className="text-sm font-medium text-card-foreground">
-                    Username
+                    Username *
                   </Label>
                   <Input
                     id="username"
@@ -232,7 +355,7 @@ const Login = () => {
                 {/* Password Field */}
                 <div className="space-y-2">
                   <Label htmlFor="password" className="text-sm font-medium text-card-foreground">
-                    Password
+                    Password *
                   </Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
@@ -253,6 +376,11 @@ const Login = () => {
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
+                  {!isLogin && (
+                    <p className="text-xs text-muted-foreground">
+                      Password must be at least 6 characters
+                    </p>
+                  )}
                 </div>
 
                 {/* Submit Button */}
