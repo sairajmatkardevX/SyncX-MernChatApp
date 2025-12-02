@@ -7,5 +7,5 @@ const multerUpload = multer({
 });
 
 // For multiple file attachments - field name "attachments"
-export const attachmentsMulter = multerUpload.array("attachments", 5); // Max 5 files
+export const attachmentsMulter = multerUpload.array("attachments", 5);
 export const singleAvatar = multerUpload.single("avatar");

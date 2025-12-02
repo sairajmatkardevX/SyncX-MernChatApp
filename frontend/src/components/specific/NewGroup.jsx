@@ -1,16 +1,4 @@
-import { useInputValidation } from "6pp";
-import {
-  Button,
-  Dialog,
-  DialogTitle,
-  Skeleton,
-  Stack,
-  TextField,
-  Typography,
-} from "@mui/material";
-import React, { useState } from "react";
-import { sampleUsers } from "../../constants/sampleData";
-import UserItem from "../shared/UserItem";
+import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   useAvailableFriendsQuery,
@@ -20,6 +8,23 @@ import { useAsyncMutation, useErrors } from "../../hooks/hook";
 import { setIsNewGroup } from "../../redux/reducers/misc";
 import toast from "react-hot-toast";
 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import UserItem from "../shared/UserItem";
+
+
 const NewGroup = () => {
   const { isNewGroup } = useSelector((state) => state.misc);
   const dispatch = useDispatch();
@@ -27,35 +32,24 @@ const NewGroup = () => {
   const { isError, isLoading, error, data } = useAvailableFriendsQuery();
   const [newGroup, isLoadingNewGroup] = useAsyncMutation(useNewGroupMutation);
 
-  const groupName = useInputValidation("");
-
+  const [groupName, setGroupName] = useState("");
   const [selectedMembers, setSelectedMembers] = useState([]);
 
-  const errors = [
-    {
-      isError,
-      error,
-    },
-  ];
-
-  useErrors(errors);
+  useErrors([{ isError, error }]);
 
   const selectMemberHandler = (id) => {
     setSelectedMembers((prev) =>
-      prev.includes(id)
-        ? prev.filter((currElement) => currElement !== id)
-        : [...prev, id]
+      prev.includes(id) ? prev.filter((user) => user !== id) : [...prev, id]
     );
   };
 
   const submitHandler = () => {
-    if (!groupName.value) return toast.error("Group name is required");
-
+    if (!groupName.trim()) return toast.error("Group name is required");
     if (selectedMembers.length < 2)
-      return toast.error("Please Select Atleast 3 Members");
+      return toast.error("Please select at least 2 members");
 
     newGroup("Creating New Group...", {
-      name: groupName.value,
+      name: groupName,
       members: selectedMembers,
     });
 
@@ -64,57 +58,108 @@ const NewGroup = () => {
 
   const closeHandler = () => {
     dispatch(setIsNewGroup(false));
+    setGroupName("");
+    setSelectedMembers([]);
   };
 
   return (
-    <Dialog onClose={closeHandler} open={isNewGroup}>
-      <Stack p={{ xs: "1rem", sm: "3rem" }} width={"25rem"} spacing={"2rem"}>
-        <DialogTitle textAlign={"center"} variant="h4">
-          New Group
-        </DialogTitle>
+    <Dialog open={isNewGroup} onOpenChange={(open) => !open && closeHandler()}>
+      <DialogContent className="sm:max-w-[425px] gap-6">
+        {/* Use VisuallyHidden if you want to hide the title from view but keep it accessible */}
+        <DialogHeader>
+          <DialogTitle className="text-center text-2xl font-bold text-card-foreground">
+            New Group
+          </DialogTitle>
+          <DialogDescription className="text-center text-muted-foreground">
+            Create a new group chat with your friends
+          </DialogDescription>
+        </DialogHeader>
 
-        <TextField
-          label="Group Name"
-          value={groupName.value}
-          onChange={groupName.changeHandler}
-        />
+        {/* Group Name Input */}
+        <div className="space-y-2">
+          <Label htmlFor="group-name" className="text-card-foreground">
+            Group Name
+          </Label>
+          <Input
+            id="group-name"
+            placeholder="Enter group name"
+            value={groupName}
+            onChange={(e) => setGroupName(e.target.value)}
+            className="bg-background"
+          />
+        </div>
 
-        <Typography variant="body1">Members</Typography>
+        {/* Members Selection */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <Label className="text-card-foreground">Members</Label>
+            {selectedMembers.length > 0 && (
+              <Badge variant="secondary" className="bg-primary/10 text-primary">
+                {selectedMembers.length} selected
+              </Badge>
+            )}
+          </div>
 
-        <Stack>
-          {isLoading ? (
-            <Skeleton />
-          ) : (
-            data?.friends?.map((i) => (
-              <UserItem
-                user={i}
-                key={i._id}
-                handler={selectMemberHandler}
-                isAdded={selectedMembers.includes(i._id)}
-              />
-            ))
+          <ScrollArea className="h-64 rounded-md border border-border bg-background p-2">
+            <div className="space-y-2">
+              {isLoading ? (
+                <>
+                  <Skeleton className="h-16 w-full" />
+                  <Skeleton className="h-16 w-full" />
+                  <Skeleton className="h-16 w-full" />
+                </>
+              ) : data?.friends?.length > 0 ? (
+                data.friends.map((user) => (
+                  <UserItem
+                    key={user._id}
+                    user={user}
+                    handler={selectMemberHandler}
+                    isAdded={selectedMembers.includes(user._id)}
+                  />
+                ))
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  No friends available to add
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+
+          {selectedMembers.length < 2 && (
+            <p className="text-xs text-muted-foreground">
+              Select at least 2 friends to create a group
+            </p>
           )}
-        </Stack>
+        </div>
 
-        <Stack direction={"row"} justifyContent={"space-evenly"}>
+        {/* Submit Actions */}
+        <DialogFooter className="gap-2 sm:gap-0">
           <Button
-            variant="text"
-            color="error"
-            size="large"
+            variant="outline"
             onClick={closeHandler}
+            className="flex-1"
           >
             Cancel
           </Button>
+
           <Button
-            variant="contained"
-            size="large"
             onClick={submitHandler}
-            disabled={isLoadingNewGroup}
+            disabled={
+              isLoadingNewGroup || selectedMembers.length < 2 || !groupName.trim()
+            }
+            className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
           >
-            Create
+            {isLoadingNewGroup ? (
+              <div className="flex items-center justify-center">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2" />
+                Creating...
+              </div>
+            ) : (
+              "Create Group"
+            )}
           </Button>
-        </Stack>
-      </Stack>
+        </DialogFooter>
+      </DialogContent>
     </Dialog>
   );
 };

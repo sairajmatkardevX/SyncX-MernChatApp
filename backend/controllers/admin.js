@@ -1,3 +1,5 @@
+// backend/controllers/admin.js - FIXED VERSION
+
 import jwt from "jsonwebtoken";
 import { TryCatch } from "../middlewares/error.js";
 import { Chat } from "../models/chat.js";
@@ -50,7 +52,7 @@ const allUsers = TryCatch(async (req, res) => {
   const users = await User.find({});
 
   const transformedUsers = await Promise.all(
-    users.map(async ({ name, username, avatar, _id }) => {
+    users.map(async ({ name, username, avatar, _id, bio }) => {
       const [groups, friends] = await Promise.all([
         Chat.countDocuments({ groupChat: true, members: _id }),
         Chat.countDocuments({ groupChat: false, members: _id }),
@@ -61,6 +63,7 @@ const allUsers = TryCatch(async (req, res) => {
         username,
         avatar: avatar.url,
         _id,
+        bio: bio || "", 
         groups,
         friends,
       };
@@ -108,33 +111,63 @@ const allChats = TryCatch(async (req, res) => {
   });
 });
 
+
+
 const allMessages = TryCatch(async (req, res) => {
-  const messages = await Message.find({})
-    .populate("sender", "name avatar")
-    .populate("chat", "groupChat");
+  try {
+    
 
-  const transformedMessages = messages.map(
-    ({ content, attachments, _id, sender, createdAt, chat }) => ({
-      _id,
-      attachments,
-      content,
-      createdAt,
-      chat: chat._id,
-      groupChat: chat.groupChat,
-      sender: {
-        _id: sender._id,
-        name: sender.name,
-        avatar: sender.avatar.url,
-      },
-    })
-  );
+    const messages = await Message.find({})
+      .populate("sender", "name avatar")
+      .populate("chat", "groupChat")
+      .lean();
 
-  return res.status(200).json({
-    success: true,
-    messages: transformedMessages,
-  });
+   
+    const transformedMessages = messages.map((message) => {
+     
+      let senderAvatarUrl = null;
+      
+      if (message.sender?.avatar) {
+        
+        if (typeof message.sender.avatar === "object" && message.sender.avatar.url) {
+          senderAvatarUrl = message.sender.avatar.url;
+        }
+       
+        else if (typeof message.sender.avatar === "string") {
+          senderAvatarUrl = message.sender.avatar;
+        }
+      }
+
+      return {
+        _id: message._id,
+        content: message.content || "",
+        attachments: message.attachments || [],
+        createdAt: message.createdAt,
+        chat: message.chat?._id || message.chat,
+        groupChat: message.chat?.groupChat || false,
+        sender: {
+          _id: message.sender?._id || "unknown",
+          name: message.sender?.name || "Unknown User",
+          avatar: senderAvatarUrl, 
+        },
+      };
+    });
+
+   
+
+    return res.status(200).json({
+      success: true,
+      messages: transformedMessages,
+    });
+  } catch (error) {
+   
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch messages",
+      error: error.message,
+    });
+  }
 });
-
 const getDashboardStats = TryCatch(async (req, res) => {
   const [groupsCount, usersCount, messagesCount, totalChatsCount] =
     await Promise.all([
@@ -181,6 +214,74 @@ const getDashboardStats = TryCatch(async (req, res) => {
   });
 });
 
+const updateUser = TryCatch(async (req, res, next) => {
+  const { id } = req.params;
+  const { name, username, bio } = req.body;
+
+
+  const user = await User.findById(id);
+  if (!user) {
+    console.log("❌ User not found:", id); 
+    return next(new ErrorHandler("User not found", 404));
+  }
+
+  
+  if (username && username !== user.username) {
+    const existingUser = await User.findOne({ username, _id: { $ne: id } });
+    if (existingUser) {
+      return next(new ErrorHandler("Username already taken", 400));
+    }
+  }
+
+ 
+  if (name !== undefined) user.name = name;
+  if (username !== undefined) user.username = username;
+  if (bio !== undefined) user.bio = bio;
+
+  await user.save();
+
+
+
+  res.status(200).json({
+    success: true,
+    message: "User updated successfully",
+  });
+});
+
+
+const deleteUser = TryCatch(async (req, res, next) => {
+  const { id } = req.params;
+
+  
+
+  const user = await User.findById(id);
+  if (!user) {
+  
+    return next(new ErrorHandler("User not found", 404));
+  }
+
+
+  await Chat.updateMany({ members: id }, { $pull: { members: id } });
+
+
+  await Chat.deleteMany({
+    groupChat: false,
+    members: { $size: 0 },
+  });
+
+  
+  await Message.deleteMany({ sender: id });
+
+  await User.findByIdAndDelete(id);
+
+  
+
+  res.status(200).json({
+    success: true,
+    message: "User deleted successfully",
+  });
+});
+
 export {
   allUsers,
   allChats,
@@ -189,4 +290,6 @@ export {
   adminLogin,
   adminLogout,
   getAdminData,
+  updateUser,
+  deleteUser,
 };

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 
-// ✅ YOUR EXISTING HOOKS - KEEP THESE
+
 const useErrors = (errors = []) => {
   useEffect(() => {
     errors.forEach(({ isError, error, fallback }) => {
@@ -62,7 +62,7 @@ const useSocketEvents = (socket, handlers) => {
   }, [socket, handlers]);
 };
 
-// ✅ ADD THIS NEW HOOK AT THE BOTTOM
+
 const useFetchData = (url, key) => {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState(null);
@@ -72,11 +72,11 @@ const useFetchData = (url, key) => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        console.log("🔄 Fetching data from:", url);
+        console.log(" Fetching data from:", url);
         const response = await axios.get(url, {
-          withCredentials: true, // ✅ This ensures cookies are sent
+          withCredentials: true, 
         });
-        console.log("✅ Data fetched successfully:", response.data);
+        console.log(" Data fetched successfully:", response.data);
         setData(response.data);
       } catch (err) {
         console.error("❌ Fetch error:", err);
@@ -92,5 +92,4 @@ const useFetchData = (url, key) => {
   return { loading, data, error };
 };
 
-// ✅ UPDATE EXPORTS TO INCLUDE THE NEW HOOK
 export { useErrors, useAsyncMutation, useSocketEvents, useFetchData };

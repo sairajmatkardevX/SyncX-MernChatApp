@@ -1,7 +1,6 @@
-import { Drawer, Grid, Skeleton } from "@mui/material";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import {
   NEW_MESSAGE_ALERT,
   NEW_REQUEST,
@@ -19,113 +18,151 @@ import {
   setIsDeleteMenu,
   setIsMobile,
   setSelectedDeleteChat,
+  setOnlineUsers,
 } from "../../redux/reducers/misc";
-import { getSocket } from "../../socket";
-import DeleteChatMenu from "../dialogues/DeleteChatMenu";
+import { useSocket } from "../../hooks/useSocket";
+import DeleteChatMenu from "../dialogs/DeleteChatMenu";
 import Title from "../shared/Title";
 import ChatList from "../specific/ChatList";
 import Profile from "../specific/Profile";
 import Header from "./Header";
 
-const AppLayout = () => (WrappedComponent) => {
-  return (props) => {
-    const params = useParams();
-    const navigate = useNavigate();
-    const dispatch = useDispatch();
-    const socket = getSocket();
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
-    const chatId = params.chatId;
-    const deleteMenuAnchor = useRef(null);
+import { LayoutLoader } from "../layouts/Loaders";
 
-    const [onlineUsers, setOnlineUsers] = useState([]);
+const AppLayout = ({ children }) => {
+  const params = useParams();
 
-    const { isMobile } = useSelector((state) => state.misc);
-    const { user } = useSelector((state) => state.auth);
-    const { newMessagesAlert } = useSelector((state) => state.chat);
+  const dispatch = useDispatch();
+  const socket = useSocket();
 
-    const { isLoading, data, isError, error, refetch } = useMyChatsQuery("");
+  const chatId = params.chatId;
+  const deleteMenuAnchor = useRef(null);
 
-    useErrors([{ isError, error }]);
+  const [onlineUsers, setOnlineUsersState] = useState([]);
+  const [isThemeReady, setIsThemeReady] = useState(false);
 
-    useEffect(() => {
-      getOrSaveFromStorage({ key: NEW_MESSAGE_ALERT, value: newMessagesAlert });
-    }, [newMessagesAlert]);
+  const { isMobile } = useSelector((state) => state.misc);
+  const { user } = useSelector((state) => state.auth);
+  const { newMessagesAlert } = useSelector((state) => state.chat);
 
-    const handleDeleteChat = (e, chatId, groupChat) => {
-      dispatch(setIsDeleteMenu(true));
-      dispatch(setSelectedDeleteChat({ chatId, groupChat }));
-      deleteMenuAnchor.current = e.currentTarget;
-    };
+  const { isLoading, data, isError, error, refetch } = useMyChatsQuery("");
 
-    const handleMobileClose = () => dispatch(setIsMobile(false));
+  useEffect(() => {
+    dispatch(setOnlineUsers(onlineUsers));
+  }, [onlineUsers, dispatch]);
 
-    const newMessageAlertListener = useCallback(
-      (data) => {
-        if (data.chatId === chatId) return;
-        dispatch(setNewMessagesAlert(data));
-      },
-      [chatId]
-    );
+  useErrors([{ isError, error }]);
 
-    const newRequestListener = useCallback(() => {
-      dispatch(incrementNotification());
-    }, [dispatch]);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsThemeReady(true);
+    }, 100);
 
-    const refetchListener = useCallback(() => {
-      refetch();
-      navigate("/");
-    }, [refetch, navigate]);
+    return () => clearTimeout(timer);
+  }, []);
 
-    const onlineUsersListener = useCallback((data) => {
-      setOnlineUsers(data);
-    }, []);
+  useEffect(() => {
+    getOrSaveFromStorage({ key: NEW_MESSAGE_ALERT, value: newMessagesAlert });
+  }, [newMessagesAlert]);
 
-    const eventHandlers = {
-      [NEW_MESSAGE_ALERT]: newMessageAlertListener,
-      [NEW_REQUEST]: newRequestListener,
-      [REFETCH_CHATS]: refetchListener,
-      [ONLINE_USERS]: onlineUsersListener,
-    };
+  const handleDeleteChat = (e, chatId, groupChat) => {
+    dispatch(setIsDeleteMenu(true));
+    dispatch(setSelectedDeleteChat({ chatId, groupChat }));
+    deleteMenuAnchor.current = e.currentTarget;
+  };
 
-    useSocketEvents(socket, eventHandlers);
+  const handleMobileClose = () => dispatch(setIsMobile(false));
 
+  const newMessageAlertListener = useCallback(
+    (data) => {
+      if (data.chatId === chatId) return;
+      dispatch(setNewMessagesAlert(data));
+    },
+    [chatId, dispatch]
+  );
+
+  const newRequestListener = useCallback(() => {
+    dispatch(incrementNotification());
+  }, [dispatch]);
+
+  const refetchListener = useCallback(async () => {
+    try {
+      await refetch();
+    } catch (error) {
+      console.error("❌ Error refetching chats:", error);
+    }
+  }, [refetch]);
+
+  const onlineUsersListener = useCallback((data) => {
+    setOnlineUsersState(data);
+  }, []);
+
+  const eventHandlers = {
+    [NEW_MESSAGE_ALERT]: newMessageAlertListener,
+    [NEW_REQUEST]: newRequestListener,
+    [REFETCH_CHATS]: refetchListener,
+    [ONLINE_USERS]: onlineUsersListener,
+  };
+
+  useSocketEvents(socket, eventHandlers);
+
+  if (!isThemeReady) {
     return (
       <>
         <Title />
-        <Header />
+        <LayoutLoader />
+      </>
+    );
+  }
 
-        <DeleteChatMenu
-          dispatch={dispatch}
-          deleteMenuAnchor={deleteMenuAnchor}
-        />
+  return (
+    <>
+      <Title />
+      <Header />
 
-        {isLoading ? (
-          <Skeleton />
-        ) : (
-          <Drawer open={isMobile} onClose={handleMobileClose}>
+      <DeleteChatMenu dispatch={dispatch} deleteMenuAnchor={deleteMenuAnchor} />
+
+      {/* Mobile Sidebar */}
+      <Sheet open={isMobile} onOpenChange={handleMobileClose}>
+        <SheetContent
+          side="left"
+          className="w-[320px] max-w-[85vw] p-0 bg-sidebar border-r border-border"
+        >
+          {isLoading ? (
+            <div className="p-4 space-y-4">
+              <Skeleton className="h-12 w-full bg-background/80" />
+              <Skeleton className="h-12 w-full bg-background/80" />
+              <Skeleton className="h-12 w-full bg-background/80" />
+            </div>
+          ) : (
             <ChatList
-              w="70vw"
+              w="100%"
               chats={data?.chats}
               chatId={chatId}
               handleDeleteChat={handleDeleteChat}
               newMessagesAlert={newMessagesAlert}
               onlineUsers={onlineUsers}
             />
-          </Drawer>
-        )}
+          )}
+        </SheetContent>
+      </Sheet>
 
-        <Grid container height={"calc(100vh - 4rem)"}>
-          <Grid
-            item
-            sm={4}
-            md={3}
-            sx={{
-              display: { xs: "none", sm: "block" },
-            }}
-            height={"100%"}
-          >
+      {/* Desktop Layout - 3 Column */}
+      <div className="flex h-[calc(100vh-4rem)] bg-background">
+        {/* Left Sidebar - Chat List */}
+        <div className="hidden md:block w-80 h-full border-r border-border bg-sidebar">
+          <ScrollArea className="h-full">
             {isLoading ? (
-              <Skeleton />
+              <div className="p-4 space-y-4">
+                <Skeleton className="h-12 w-full bg-background/80" />
+                <Skeleton className="h-12 w-full bg-background/80" />
+                <Skeleton className="h-12 w-full bg-background/80" />
+                <Skeleton className="h-12 w-full bg-background/80" />
+              </div>
             ) : (
               <ChatList
                 chats={data?.chats}
@@ -135,28 +172,46 @@ const AppLayout = () => (WrappedComponent) => {
                 onlineUsers={onlineUsers}
               />
             )}
-          </Grid>
-          <Grid item xs={12} sm={8} md={5} lg={6} height={"100%"}>
-            <WrappedComponent {...props} chatId={chatId} user={user} />
-          </Grid>
+          </ScrollArea>
+        </div>
 
-          <Grid
-            item
-            md={4}
-            lg={3}
-            height={"100%"}
-            sx={{
-              display: { xs: "none", md: "block" },
-              padding: "2rem",
-              bgcolor: "rgba(0,0,0,0.85)",
-            }}
-          >
-            <Profile user={user} />
-          </Grid>
-        </Grid>
-      </>
-    );
-  };
+        {/* Center - Main Chat Area */}
+        <div className="flex-1 min-w-0 h-full bg-background">{children}</div>
+
+        {/* Right Sidebar - Profile */}
+        <div className="hidden lg:flex lg:flex-col w-96 h-full border-l border-border bg-sidebar overflow-hidden">
+          <div className="p-6 h-full flex items-center justify-center">
+            {user ? (
+              <Profile user={user} />
+            ) : (
+              <div className="text-center">
+                <div className="space-y-3">
+                  <div className="h-16 w-16 rounded-full bg-muted mx-auto flex items-center justify-center">
+                    <svg
+                      className="h-8 w-8 text-muted-foreground"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                      />
+                    </svg>
+                  </div>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    No profile available
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </>
+  );
 };
 
 export default AppLayout;

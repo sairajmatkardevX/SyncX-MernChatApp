@@ -7,6 +7,8 @@ import {
   allUsers,
   getAdminData,
   getDashboardStats,
+  updateUser,
+  deleteUser,
 } from "../controllers/admin.js";
 import { adminLoginValidator, validateHandler } from "../lib/validator.js";
 import { adminOnly } from "../middlewares/auth.js";
@@ -28,5 +30,8 @@ app.get("/chats", allChats);
 app.get("/messages", allMessages);
 
 app.get("/stats", getDashboardStats);
+// CRUD Routes
+app.put("/user/:id", updateUser);
+app.delete("/user/:id", deleteUser);
 
 export default app;

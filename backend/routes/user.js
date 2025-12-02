@@ -9,6 +9,8 @@ import {
   newUser,
   searchUser,
   sendFriendRequest,
+  updateProfile,
+  removeFriend, 
 } from "../controllers/user.js";
 import {
   acceptRequestValidator,
@@ -22,17 +24,15 @@ import { singleAvatar } from "../middlewares/multer.js";
 
 const app = express.Router();
 
+
 app.post("/new", singleAvatar, registerValidator(), validateHandler, newUser);
 app.post("/login", loginValidator(), validateHandler, login);
 
-// After here user must be logged in to access the routes
 
 app.use(isAuthenticated);
 
 app.get("/me", getMyProfile);
-
 app.get("/logout", logout);
-
 app.get("/search", searchUser);
 
 app.put(
@@ -50,7 +50,16 @@ app.put(
 );
 
 app.get("/notifications", getMyNotifications);
-
 app.get("/friends", getMyFriends);
+
+app.put(
+  "/update",
+  singleAvatar,
+  validateHandler,
+  updateProfile
+);
+
+
+app.put("/removefriend", removeFriend);
 
 export default app;

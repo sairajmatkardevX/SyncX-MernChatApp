@@ -54,9 +54,43 @@ const sendAttachmentsValidator = () => [
 
 const chatIdValidator = () => [param("id", "Please Enter Chat ID").notEmpty()];
 
+
+const chatIdParamValidator = (paramName = "chatId") => [
+  param(paramName, "Please Enter Chat ID").notEmpty(),
+];
+
 const renameValidator = () => [
   param("id", "Please Enter Chat ID").notEmpty(),
   body("name", "Please Enter New Name").notEmpty(),
+];
+
+const editGroupValidator = () => [
+  param("chatId", "Please Enter Chat ID").notEmpty(),
+  body("name")
+    .optional()
+    .notEmpty()
+    .withMessage("Group name cannot be empty"),
+  body("description")
+    .optional()
+    .isString()
+    .withMessage("Description must be a string"),
+];
+
+
+const assignAdminValidator = () => [
+  body("chatId", "Please Enter Chat ID").notEmpty(),
+  body("userId", "Please Enter User ID to promote").notEmpty(),
+];
+
+
+const removeAdminValidator = () => [
+  param("chatId", "Please Enter Chat ID").notEmpty(),
+];
+
+
+const deleteMessageValidator = () => [
+  param("chatId", "Please Enter Chat ID").notEmpty(),
+  param("messageId", "Please Enter Message ID").notEmpty(),
 ];
 
 const sendRequestValidator = () => [
@@ -80,10 +114,15 @@ export {
   acceptRequestValidator,
   addMemberValidator,
   adminLoginValidator,
+  assignAdminValidator,
+  chatIdParamValidator,
   chatIdValidator,
+  deleteMessageValidator,
+  editGroupValidator,
   loginValidator,
   newGroupValidator,
   registerValidator,
+  removeAdminValidator,
   removeMemberValidator,
   renameValidator,
   sendAttachmentsValidator,

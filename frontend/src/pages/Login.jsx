@@ -1,70 +1,79 @@
-import { useFileHandler, useInputValidation } from "6pp";
-import { CameraAlt as CameraAltIcon } from "@mui/icons-material";
-import {
-  Avatar,
-  Button,
-  Container,
-  IconButton,
-  Paper,
-  Stack,
-  TextField,
-  Typography,
-} from "@mui/material";
-import axios from "axios";
-import  { useState } from "react";
-import toast from "react-hot-toast";
-import { useDispatch } from "react-redux";
-import { VisuallyHiddenInput } from "../components/styles/StyledComponent";
-import { bgGradient } from "../constants/color";
-import { server } from "../constants/config";
-import { userExists } from "../redux/reducers/auth";
-import { usernameValidator } from "../utils/validators";
+
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useDispatch } from 'react-redux';
+import { userExists } from '@/redux/reducers/auth';
+import { 
+  Camera, 
+  Eye, 
+  EyeOff, 
+  MessageCircle, 
+  User,
+  Lock,
+  UserPlus,
+  LogIn
+} from 'lucide-react';
+import axios from 'axios';
+import { server } from '../constants/config';
+import { useTheme } from "next-themes";
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-
-  const toggleLogin = () => setIsLogin((prev) => !prev);
-
-  const name = useInputValidation("");
-  const bio = useInputValidation("");
-  const username = useInputValidation("", usernameValidator);
-  const password = useInputValidation("");
-
-  const avatar = useFileHandler("single");
+  const [showPassword, setShowPassword] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    bio: '',
+    username: '',
+    password: '',
+    avatar: null
+  });
+  const [avatarPreview, setAvatarPreview] = useState('');
+  const { theme } = useTheme();
 
   const dispatch = useDispatch();
 
+  const toggleLogin = () => {
+    setIsLogin(!isLogin);
+    setFormData({ name: '', bio: '', username: '', password: '', avatar: null });
+    setAvatarPreview('');
+  };
+
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFormData(prev => ({ ...prev, avatar: file }));
+      setAvatarPreview(URL.createObjectURL(file));
+    }
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
-
-    const toastId = toast.loading("Logging In...");
-
     setIsLoading(true);
-    const config = {
-      withCredentials: true,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    };
 
     try {
       const { data } = await axios.post(
         `${server}/api/v1/user/login`,
         {
-          username: username.value,
-          password: password.value,
+          username: formData.username,
+          password: formData.password,
         },
-        config
+        { withCredentials: true, headers: { "Content-Type": "application/json" } }
       );
+      
       dispatch(userExists(data.user));
-      toast.success(data.message, {
-        id: toastId,
-      });
+      console.log('Login successful');
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Something Went Wrong", {
-        id: toastId,
-      });
+      console.error('Login failed:', error?.response?.data?.message);
     } finally {
       setIsLoading(false);
     }
@@ -72,258 +81,214 @@ const Login = () => {
 
   const handleSignUp = async (e) => {
     e.preventDefault();
-
-    const toastId = toast.loading("Signing Up...");
     setIsLoading(true);
 
-    const formData = new FormData();
-    formData.append("avatar", avatar.file);
-    formData.append("name", name.value);
-    formData.append("bio", bio.value);
-    formData.append("username", username.value);
-    formData.append("password", password.value);
-
-    const config = {
-      withCredentials: true,
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    };
+    const formDataToSend = new FormData();
+    if (formData.avatar) formDataToSend.append("avatar", formData.avatar);
+    formDataToSend.append("name", formData.name);
+    formDataToSend.append("bio", formData.bio);
+    formDataToSend.append("username", formData.username);
+    formDataToSend.append("password", formData.password);
 
     try {
       const { data } = await axios.post(
         `${server}/api/v1/user/new`,
-        formData,
-        config
+        formDataToSend,
+        { withCredentials: true, headers: { "Content-Type": "multipart/form-data" } }
       );
 
       dispatch(userExists(data.user));
-      toast.success(data.message, {
-        id: toastId,
-      });
+      console.log('Sign up successful');
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Something Went Wrong", {
-        id: toastId,
-      });
+      console.error('Sign up failed:', error?.response?.data?.message);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div
-      style={{
-        backgroundImage: bgGradient,
-      }}
-    >
-      <Container
-        component={"main"}
-        maxWidth="xs"
-        sx={{
-          height: "100vh",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Animated background elements - Theme aware */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary/5 rounded-full blur-3xl"></div>
+      </div>
+      
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-md relative z-10"
       >
-        <Paper
-          elevation={3}
-          sx={{
-            padding: 4,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-          }}
-        >
-          {isLogin ? (
-            <>
-              <Typography variant="h5">Login</Typography>
-              <form
-                style={{
-                  width: "100%",
-                  marginTop: "1rem",
-                }}
-                onSubmit={handleLogin}
+        <Card className="bg-card/95 backdrop-blur-sm border shadow-2xl">
+          <CardHeader className="text-center space-y-4 pb-6">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="mx-auto w-16 h-16 bg-primary rounded-2xl flex items-center justify-center shadow-lg"
+            >
+              <MessageCircle className="h-8 w-8 text-primary-foreground" />
+            </motion.div>
+            <div>
+              <CardTitle className="text-2xl font-bold text-card-foreground">
+                {isLogin ? 'Welcome Back' : 'Join Chattu'}
+              </CardTitle>
+              <CardDescription className="text-muted-foreground mt-2">
+                {isLogin ? 'Sign in to continue your conversations' : 'Create your account to get started'}
+              </CardDescription>
+            </div>
+          </CardHeader>
+
+          <CardContent className="space-y-4">
+            <AnimatePresence mode="wait">
+              <motion.form
+                key={isLogin ? 'login' : 'signup'}
+                initial={{ opacity: 0, x: isLogin ? -20 : 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: isLogin ? 20 : -20 }}
+                onSubmit={isLogin ? handleLogin : handleSignUp}
+                className="space-y-4"
               >
-                <TextField
-                  required
-                  fullWidth
-                  label="Username"
-                  margin="normal"
-                  variant="outlined"
-                  value={username.value}
-                  onChange={username.changeHandler}
-                />
-
-                <TextField
-                  required
-                  fullWidth
-                  label="Password"
-                  type="password"
-                  margin="normal"
-                  variant="outlined"
-                  value={password.value}
-                  onChange={password.changeHandler}
-                />
-
-                <Button
-                  sx={{
-                    marginTop: "1rem",
-                  }}
-                  variant="contained"
-                  color="primary"
-                  type="submit"
-                  fullWidth
-                  disabled={isLoading}
-                >
-                  Login
-                </Button>
-
-                <Typography textAlign={"center"} m={"1rem"}>
-                  OR
-                </Typography>
-
-                <Button
-                  disabled={isLoading}
-                  fullWidth
-                  variant="text"
-                  onClick={toggleLogin}
-                >
-                  Sign Up Instead
-                </Button>
-              </form>
-            </>
-          ) : (
-            <>
-              <Typography variant="h5">Sign Up</Typography>
-              <form
-                style={{
-                  width: "100%",
-                  marginTop: "1rem",
-                }}
-                onSubmit={handleSignUp}
-              >
-                <Stack position={"relative"} width={"10rem"} margin={"auto"}>
-                  <Avatar
-                    sx={{
-                      width: "10rem",
-                      height: "10rem",
-                      objectFit: "contain",
-                    }}
-                    src={avatar.preview}
-                  />
-
-                  <IconButton
-                    sx={{
-                      position: "absolute",
-                      bottom: "0",
-                      right: "0",
-                      color: "white",
-                      bgcolor: "rgba(0,0,0,0.5)",
-                      ":hover": {
-                        bgcolor: "rgba(0,0,0,0.7)",
-                      },
-                    }}
-                    component="label"
+                {/* Avatar Upload - Only for Sign Up */}
+                {!isLogin && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="flex flex-col items-center space-y-3"
                   >
-                    <>
-                      <CameraAltIcon />
-                      <VisuallyHiddenInput
-                        type="file"
-                        onChange={avatar.changeHandler}
+                    <div className="relative">
+                      <Avatar className="w-20 h-20 border-4 border-background shadow-lg">
+                        <AvatarImage src={avatarPreview} />
+                        <AvatarFallback className="bg-primary text-primary-foreground text-lg font-semibold">
+                          <User className="h-6 w-6" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <label htmlFor="avatar-upload" className="absolute -bottom-1 -right-1 cursor-pointer">
+                        <div className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full p-1.5 shadow-lg transition-colors">
+                          <Camera className="h-3 w-3" />
+                        </div>
+                        <input
+                          id="avatar-upload"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleAvatarChange}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Name Field - Only for Sign Up */}
+                {!isLogin && (
+                  <div className="space-y-2">
+                    <Label htmlFor="name" className="text-sm font-medium text-card-foreground">
+                      Full Name
+                    </Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                      <Input
+                        id="name"
+                        placeholder="Enter your full name"
+                        value={formData.name}
+                        onChange={(e) => handleInputChange('name', e.target.value)}
+                        className="pl-10"
+                        required={!isLogin}
                       />
-                    </>
-                  </IconButton>
-                </Stack>
-
-                {avatar.error && (
-                  <Typography
-                    m={"1rem auto"}
-                    width={"fit-content"}
-                    display={"block"}
-                    color="error"
-                    variant="caption"
-                  >
-                    {avatar.error}
-                  </Typography>
+                    </div>
+                  </div>
                 )}
 
-                <TextField
-                  required
-                  fullWidth
-                  label="Name"
-                  margin="normal"
-                  variant="outlined"
-                  value={name.value}
-                  onChange={name.changeHandler}
-                />
-
-                <TextField
-                  required
-                  fullWidth
-                  label="Bio"
-                  margin="normal"
-                  variant="outlined"
-                  value={bio.value}
-                  onChange={bio.changeHandler}
-                />
-                <TextField
-                  required
-                  fullWidth
-                  label="Username"
-                  margin="normal"
-                  variant="outlined"
-                  value={username.value}
-                  onChange={username.changeHandler}
-                />
-
-                {username.error && (
-                  <Typography color="error" variant="caption">
-                    {username.error}
-                  </Typography>
+                {/* Bio Field - Only for Sign Up */}
+                {!isLogin && (
+                  <div className="space-y-2">
+                    <Label htmlFor="bio" className="text-sm font-medium text-card-foreground">
+                      Bio
+                    </Label>
+                    <Input
+                      id="bio"
+                      placeholder="Tell us about yourself"
+                      value={formData.bio}
+                      onChange={(e) => handleInputChange('bio', e.target.value)}
+                      required={!isLogin}
+                    />
+                  </div>
                 )}
 
-                <TextField
-                  required
-                  fullWidth
-                  label="Password"
-                  type="password"
-                  margin="normal"
-                  variant="outlined"
-                  value={password.value}
-                  onChange={password.changeHandler}
-                />
+                {/* Username Field */}
+                <div className="space-y-2">
+                  <Label htmlFor="username" className="text-sm font-medium text-card-foreground">
+                    Username
+                  </Label>
+                  <Input
+                    id="username"
+                    placeholder="Enter your username"
+                    value={formData.username}
+                    onChange={(e) => handleInputChange('username', e.target.value)}
+                    required
+                  />
+                </div>
 
+                {/* Password Field */}
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-sm font-medium text-card-foreground">
+                    Password
+                  </Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                    <Input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Enter your password"
+                      value={formData.password}
+                      onChange={(e) => handleInputChange('password', e.target.value)}
+                      className="pl-10 pr-10"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Submit Button */}
                 <Button
-                  sx={{
-                    marginTop: "1rem",
-                  }}
-                  variant="contained"
-                  color="primary"
                   type="submit"
-                  fullWidth
+                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg transition-all duration-200 hover:shadow-xl"
                   disabled={isLoading}
                 >
-                  Sign Up
+                  {isLoading ? (
+                    <div className="flex items-center space-x-2">
+                      <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      <span>{isLogin ? 'Signing in...' : 'Creating account...'}</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center space-x-2">
+                      {isLogin ? <LogIn className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
+                      <span>{isLogin ? 'Sign In' : 'Create Account'}</span>
+                    </div>
+                  )}
                 </Button>
+              </motion.form>
+            </AnimatePresence>
 
-                <Typography textAlign={"center"} m={"1rem"}>
-                  OR
-                </Typography>
-
-                <Button
-                  disabled={isLoading}
-                  fullWidth
-                  variant="text"
-                  onClick={toggleLogin}
-                >
-                  Login Instead
-                </Button>
-              </form>
-            </>
-          )}
-        </Paper>
-      </Container>
+            {/* Toggle between Login/Sign Up */}
+            <div className="text-center pt-2">
+              <button
+                onClick={toggleLogin}
+                disabled={isLoading}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium"
+              >
+                {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
     </div>
   );
 };

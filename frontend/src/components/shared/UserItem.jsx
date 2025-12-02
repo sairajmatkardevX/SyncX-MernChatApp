@@ -1,7 +1,8 @@
-import { Add as AddIcon, Remove as RemoveIcon } from "@mui/icons-material";
-import { Avatar, IconButton, ListItem, Stack, Typography } from "@mui/material";
-import React, { memo } from "react";
+import { memo } from "react";
 import { transformImage } from "../../lib/features";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Plus, Loader2, Check } from "lucide-react";
 
 const UserItem = ({
   user,
@@ -13,47 +14,37 @@ const UserItem = ({
   const { name, _id, avatar } = user;
 
   return (
-    <ListItem>
-      <Stack
-        direction={"row"}
-        alignItems={"center"}
-        spacing={"1rem"}
-        width={"100%"}
-        {...styling}
+    <div className="flex items-center gap-4 p-3 w-full" style={styling}>
+      <Avatar className="h-10 w-10 flex-shrink-0">
+        <AvatarImage src={transformImage(avatar)} alt={name} />
+        <AvatarFallback>
+          {name?.charAt(0)?.toUpperCase() || "U"}
+        </AvatarFallback>
+      </Avatar>
+
+      <p className="flex-1 text-sm font-medium truncate">
+        {name}
+      </p>
+
+      <Button
+        size="sm"
+        variant={
+          isAdded ? "outline" : 
+          handlerIsLoading ? "secondary" : "default"
+        }
+        onClick={() => handler(_id)}
+        disabled={handlerIsLoading || isAdded}
+        className="h-8 w-8 p-0 flex-shrink-0"
       >
-        <Avatar src={transformImage(avatar)} />
-
-        <Typography
-          variant="body1"
-          sx={{
-            flexGlow: 1,
-            display: "-webkit-box",
-            WebkitLineClamp: 1,
-            WebkitBoxOrient: "vertical",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            width: "100%",
-          }}
-        >
-          {name}
-        </Typography>
-
-        <IconButton
-          size="small"
-          sx={{
-            bgcolor: isAdded ? "error.main" : "primary.main",
-            color: "white",
-            "&:hover": {
-              bgcolor: isAdded ? "error.dark" : "primary.dark",
-            },
-          }}
-          onClick={() => handler(_id)}
-          disabled={handlerIsLoading}
-        >
-          {isAdded ? <RemoveIcon /> : <AddIcon />}
-        </IconButton>
-      </Stack>
-    </ListItem>
+        {handlerIsLoading ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : isAdded ? (
+          <Check className="h-4 w-4 text-green-600" />
+        ) : (
+          <Plus className="h-4 w-4" />
+        )}
+      </Button>
+    </div>
   );
 };
 

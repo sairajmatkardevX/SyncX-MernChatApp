@@ -9,13 +9,12 @@ import { v4 as uuid } from "uuid";
 import cors from "cors";
 import { v2 as cloudinary } from "cloudinary";
 import {
-  CHAT_JOINED,
-  CHAT_LEAVED,
   NEW_MESSAGE,
   NEW_MESSAGE_ALERT,
   ONLINE_USERS,
   START_TYPING,
   STOP_TYPING,
+  GET_ONLINE_USERS,
 } from "./constants/events.js";
 import { getSockets } from "./lib/helper.js";
 import { Message } from "./models/message.js";
@@ -63,36 +62,29 @@ app.use("/api/v1/chat", chatRoute);
 app.use("/api/v1/admin", adminRoute);
 app.get("/api/v1/test-cloudinary", async (req, res) => {
   try {
-    console.log("Testing Cloudinary connection...");
-    console.log("Cloud Name:", process.env.CLOUDINARY_CLOUD_NAME);
-    console.log("API Key:", process.env.CLOUDINARY_API_KEY);
-    console.log("API Secret:", process.env.CLOUDINARY_API_SECRET ? "Set" : "Not set");
-
+   
     // Test upload with a simple base64 image
     const result = await cloudinary.uploader.upload(
       "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
       {
         resource_type: "image",
-        folder: "syncx-test"
+        folder: "syncx-test",
       }
     );
 
-    console.log("Cloudinary upload successful:", result);
-    
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: "Cloudinary is working!",
       result: {
         url: result.secure_url,
-        public_id: result.public_id
-      }
+        public_id: result.public_id,
+      },
     });
   } catch (error) {
-    console.error("Cloudinary test error:", error);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       message: "Cloudinary error",
-      error: error.message 
+      error: error.message,
     });
   }
 });
@@ -111,7 +103,13 @@ io.use((socket, next) => {
 io.on("connection", (socket) => {
   const user = socket.user;
   userSocketIDs.set(user._id.toString(), socket.id);
+  onlineUsers.add(user._id.toString());
 
+  
+  io.emit(ONLINE_USERS, Array.from(onlineUsers));
+  socket.on(GET_ONLINE_USERS, () => {
+    socket.emit(ONLINE_USERS, Array.from(onlineUsers));
+  });
   socket.on(NEW_MESSAGE, async ({ chatId, members, message }) => {
     const messageForRealTime = {
       content: message,
@@ -154,23 +152,12 @@ io.on("connection", (socket) => {
     socket.to(membersSockets).emit(STOP_TYPING, { chatId });
   });
 
-  socket.on(CHAT_JOINED, ({ userId, members }) => {
-    onlineUsers.add(userId.toString());
-
-    const membersSocket = getSockets(members);
-    io.to(membersSocket).emit(ONLINE_USERS, Array.from(onlineUsers));
-  });
-
-  socket.on(CHAT_LEAVED, ({ userId, members }) => {
-    onlineUsers.delete(userId.toString());
-
-    const membersSocket = getSockets(members);
-    io.to(membersSocket).emit(ONLINE_USERS, Array.from(onlineUsers));
-  });
-
   socket.on("disconnect", () => {
+  
     userSocketIDs.delete(user._id.toString());
     onlineUsers.delete(user._id.toString());
+
+    
     socket.broadcast.emit(ONLINE_USERS, Array.from(onlineUsers));
   });
 });
