@@ -31,8 +31,6 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-import { LayoutLoader } from "../layouts/Loaders";
-
 const AppLayout = ({ children }) => {
   const params = useParams();
 
@@ -43,7 +41,6 @@ const AppLayout = ({ children }) => {
   const deleteMenuAnchor = useRef(null);
 
   const [onlineUsers, setOnlineUsersState] = useState([]);
-  const [isThemeReady, setIsThemeReady] = useState(false);
 
   const { isMobile } = useSelector((state) => state.misc);
   const { user } = useSelector((state) => state.auth);
@@ -56,14 +53,6 @@ const AppLayout = ({ children }) => {
   }, [onlineUsers, dispatch]);
 
   useErrors([{ isError, error }]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsThemeReady(true);
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, []);
 
   useEffect(() => {
     getOrSaveFromStorage({ key: NEW_MESSAGE_ALERT, value: newMessagesAlert });
@@ -109,15 +98,6 @@ const AppLayout = ({ children }) => {
   };
 
   useSocketEvents(socket, eventHandlers);
-
-  if (!isThemeReady) {
-    return (
-      <>
-        <Title />
-        <LayoutLoader />
-      </>
-    );
-  }
 
   return (
     <>

@@ -4,7 +4,40 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Synx-ChatApp</title>
+    <title>SyncX - Chat App</title>
+    
+    <!-- ⚡ CRITICAL: Theme blocking script - Prevents flash of wrong theme -->
+    <script>
+      (function() {
+        try {
+          // Get theme from localStorage or default to 'system'
+          const storedTheme = localStorage.getItem('theme');
+          const theme = storedTheme || 'system';
+          
+          // Determine actual theme (resolve 'system' to 'light' or 'dark')
+          let actualTheme;
+          if (theme === 'system') {
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            actualTheme = prefersDark ? 'dark' : 'light';
+          } else {
+            actualTheme = theme;
+          }
+          
+          // Apply theme immediately to HTML element
+          document.documentElement.classList.remove('light', 'dark');
+          document.documentElement.classList.add(actualTheme);
+          document.documentElement.style.colorScheme = actualTheme;
+          
+          // Set data attribute for debugging (optional)
+          document.documentElement.setAttribute('data-theme', actualTheme);
+        } catch (e) {
+          // Fallback to light theme if anything fails
+          console.error('Theme initialization error:', e);
+          document.documentElement.classList.add('light');
+          document.documentElement.style.colorScheme = 'light';
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

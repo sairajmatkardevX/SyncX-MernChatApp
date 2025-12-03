@@ -1,48 +1,47 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { server } from "../../constants/config";
 import axios from "axios";
+import { server } from "../../constants/config";
 
-const adminLogin = createAsyncThunk("admin/login", async (secretKey) => {
-  try {
-    const { data } = await axios.post(
-      `${server}/api/v1/admin/verify`,
-      { secretKey },
-      { 
+export const adminLogin = createAsyncThunk(
+  "admin/login",
+  async (secretKey, { rejectWithValue }) => {
+    try {
+      const { data } = await axios.post(
+        `${server}/api/v1/admin/verify`,
+        { secretKey },
+        { withCredentials: true }
+      );
+      return data.message;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || "Admin login failed");
+    }
+  }
+);
+
+export const getAdmin = createAsyncThunk(
+  "admin/getAdmin",
+  async (_, { rejectWithValue }) => {
+    try {
+      const { data } = await axios.get(`${server}/api/v1/admin/`, {
         withCredentials: true,
-      }
-    );
-
-    // Return only the success message string for toast
-    return data.message;
-  } catch (error) {
-    throw error.response?.data?.message || "Admin login failed";
+      });
+      return data.admin;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || "Failed to get admin status");
+    }
   }
-});
+);
 
-const getAdmin = createAsyncThunk("admin/getAdmin", async () => {
-  try {
-    const { data } = await axios.get(`${server}/api/v1/admin/`, {
-      withCredentials: true,
-    });
-
-    // Return only the admin boolean value
-    return data.admin;
-  } catch (error) {
-    throw error.response?.data?.message || "Failed to get admin status";
+export const adminLogout = createAsyncThunk(
+  "admin/logout",
+  async (_, { rejectWithValue }) => {
+    try {
+      const { data } = await axios.get(`${server}/api/v1/admin/logout`, {
+        withCredentials: true,
+      });
+      return data.message;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || "Admin logout failed");
+    }
   }
-});
-
-const adminLogout = createAsyncThunk("admin/logout", async () => {
-  try {
-    const { data } = await axios.get(`${server}/api/v1/admin/logout`, {
-      withCredentials: true,
-    });
-
-    // Return only the success message string for toast
-    return data.message;
-  } catch (error) {
-    throw error.response?.data?.message || "Admin logout failed";
-  }
-});
-
-export { adminLogin, getAdmin, adminLogout };
+);

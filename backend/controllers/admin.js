@@ -1,4 +1,4 @@
-// backend/controllers/admin.js - FIXED VERSION
+
 
 import jwt from "jsonwebtoken";
 import { TryCatch } from "../middlewares/error.js";

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link as LinkComponent, Navigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -68,6 +67,12 @@ const Sidebar = ({ className = "", onNavigate }) => {
 
   const logoutHandler = () => {
     dispatch(adminLogout());
+  };
+
+  // Optimized theme toggle
+  const toggleTheme = () => {
+    const newTheme = theme === "light" ? "dark" : "light";
+    setTheme(newTheme);
   };
 
   return (
@@ -149,7 +154,7 @@ const Sidebar = ({ className = "", onNavigate }) => {
             >
               <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
               <Moon className="absolute left-3 h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-              <span className="font-medium">
+              <span className="font-medium ml-8">
                 {theme === "light" ? "Light" : theme === "dark" ? "Dark" : "System"}
               </span>
             </Button>
@@ -188,25 +193,34 @@ const Sidebar = ({ className = "", onNavigate }) => {
 const AdminLayout = ({ children }) => {
   const { isAdmin } = useSelector((state) => state.auth);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const { setTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
 
   const handleMobileToggle = () => setIsMobileOpen(!isMobileOpen);
   const handleMobileNavigate = () => setIsMobileOpen(false);
+
+  // Optimized theme toggle for mobile
+  const toggleTheme = () => {
+    const newTheme = theme === "light" ? "dark" : "light";
+    setTheme(newTheme);
+  };
 
   if (!isAdmin) return <Navigate to="/admin" />;
 
   return (
     <div className="flex h-screen bg-background">
+      {/* Desktop Sidebar */}
       <div className="hidden md:flex w-80 flex-shrink-0 bg-sidebar border-r border-border">
         <Sidebar />
       </div>
 
+      {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Mobile Header */}
         <header className="md:hidden flex items-center justify-between px-4 h-16 bg-card border-b border-border shadow-sm">
           <div className="flex items-center space-x-3">
             <div className="relative">
               <img
-                src="/logo.png"
+                src="/syncxlogo.png"
                 alt="SyncX"
                 className="w-10 h-10 object-contain"
                 onError={(e) => {
@@ -276,13 +290,15 @@ const AdminLayout = ({ children }) => {
           </div>
         </header>
 
-        <main className="flex-1 overflow-auto">
+        {/* Main Content */}
+        <main className="flex-1 overflow-auto bg-background">
           <div className="container mx-auto p-4 md:p-8 max-w-7xl">
             {children}
           </div>
         </main>
       </div>
 
+      {/* Mobile Sidebar Sheet */}
       <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
         <SheetContent side="left" className="w-80 p-0 bg-sidebar border-r border-border">
           <Sidebar className="h-full" onNavigate={handleMobileNavigate} />

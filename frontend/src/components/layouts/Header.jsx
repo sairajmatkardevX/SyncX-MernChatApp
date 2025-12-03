@@ -14,8 +14,7 @@ import { resetNotificationCount } from "../../redux/reducers/chat";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "next-themes";
 import { Suspense, lazy } from "react";
-import { useGetNotificationsQuery } from "../../redux/api/api"; 
-
+import { useGetNotificationsQuery } from "../../redux/api/api";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,7 +33,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-
 import {
   Search,
   Plus,
@@ -47,11 +45,9 @@ import {
   Settings,
 } from "lucide-react";
 
-
 const SearchDialog = lazy(() => import("../specific/Search"));
 const NotificationDialog = lazy(() => import("../specific/Notifications"));
 const NewGroupDialog = lazy(() => import("../specific/NewGroup"));
-
 
 const DialogFallback = ({ message }) => (
   <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
@@ -61,7 +57,6 @@ const DialogFallback = ({ message }) => (
     </div>
   </div>
 );
-
 
 const IconButton = ({ icon, label, onClick, shortcut }) => (
   <TooltipProvider>
@@ -95,7 +90,6 @@ const Header = () => {
   );
   const { user } = useSelector((state) => state.auth);
 
- 
   const { data: notificationsData } = useGetNotificationsQuery();
   const notificationCount = notificationsData?.allRequests?.length || 0;
 
@@ -116,6 +110,14 @@ const Header = () => {
   const navigateToHome = useCallback(() => navigate("/"), [navigate]);
   const navigateToProfile = useCallback(() => navigate("/profile"), [navigate]);
 
+  const toggleTheme = useCallback(() => {
+    const newTheme = theme === "light" ? "dark" : "light";
+    setTheme(newTheme);
+    
+  
+   
+  }, [theme, setTheme]);
+
   const logoutHandler = async () => {
     try {
       const { data } = await axios.get(`${server}/api/v1/user/logout`, {
@@ -129,8 +131,7 @@ const Header = () => {
     } catch (error) {
       toast({
         title: "Logout failed",
-        description:
-          error?.response?.data?.message || "Something went wrong",
+        description: error?.response?.data?.message || "Something went wrong",
         variant: "destructive",
       });
     }
@@ -146,12 +147,15 @@ const Header = () => {
         e.preventDefault();
         openNewGroup();
       }
+      
+      if ((e.ctrlKey || e.metaKey) && e.key === "t") {
+        e.preventDefault();
+        toggleTheme();
+      }
     };
     window.addEventListener("keydown", handleKeyPress);
     return () => window.removeEventListener("keydown", handleKeyPress);
-  }, [openSearch, openNewGroup]);
-
-  const userInitial = user?.name?.charAt(0)?.toUpperCase() || "U";
+  }, [openSearch, openNewGroup, toggleTheme]);
 
   return (
     <>
@@ -215,7 +219,8 @@ const Header = () => {
                   </>
                 }
                 label="Toggle theme"
-                onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+                shortcut="Ctrl+T"
+                onClick={toggleTheme}
               />
 
               {/* Search */}
@@ -250,7 +255,11 @@ const Header = () => {
                       size="icon"
                       onClick={openNotification}
                       className="relative"
-                      aria-label={`Open notifications${notificationCount > 0 ? ` (${notificationCount} new)` : ''}`}
+                      aria-label={`Open notifications${
+                        notificationCount > 0
+                          ? ` (${notificationCount} new)`
+                          : ""
+                      }`}
                     >
                       <Bell className="h-5 w-5" />
                       {/*  Live notification badge */}
@@ -322,9 +331,7 @@ const Header = () => {
         </Suspense>
       )}
       {isNewGroup && (
-        <Suspense
-          fallback={<DialogFallback message="Creating new group..." />}
-        >
+        <Suspense fallback={<DialogFallback message="Creating new group..." />}>
           <NewGroupDialog />
         </Suspense>
       )}

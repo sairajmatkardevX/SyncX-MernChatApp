@@ -6,10 +6,10 @@ import axios from "axios";
 import { server } from "./constants/config";
 import { useDispatch, useSelector } from "react-redux";
 import { userExists, userNotExists } from "./redux/reducers/auth";
-import { getAdmin } from "./redux/thunks/admin"; 
+import { getAdmin } from "./redux/thunks/admin";
 import { Toaster } from "@/components/ui/toaster";
 import SocketProvider from "./providers/SocketProvider";
-import { ThemeProvider } from "next-themes";
+
 
 const Home = lazy(() => import("./pages/Home"));
 const Login = lazy(() => import("./pages/Login"));
@@ -32,7 +32,7 @@ const App = () => {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    
+    // Check user authentication
     axios
       .get(`${server}/api/v1/user/me`, { withCredentials: true })
       .then(({ data }) => {
@@ -45,55 +45,52 @@ const App = () => {
         setAuthChecked(true);
       });
 
-    
+    // Check admin status
     dispatch(getAdmin());
   }, [dispatch]);
 
+  // Show loader while checking auth - theme already applied via blocking script
   if (!authChecked || loader) {
-    return (
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-        <LayoutLoader />
-      </ThemeProvider>
-    );
+    return <LayoutLoader />;
   }
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <BrowserRouter>
-        <Suspense fallback={
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            <LayoutLoader />
-          </ThemeProvider>
-        }>
-          <Routes>
-            
-            <Route path="/login" element={user ? <Navigate to="/" /> : <Login />} />
-            
-            <Route 
-              path="/admin" 
-              element={isAdmin ? <Navigate to="/admin/dashboard" /> : <AdminLogin />} 
-            />
-            
-          
-            <Route 
-              path="/admin/dashboard" 
-              element={isAdmin ? <Dashboard /> : <Navigate to="/admin" />} 
-            />
-            <Route 
-              path="/admin/users" 
-              element={isAdmin ? <UserManagement /> : <Navigate to="/admin" />} 
-            />
-            <Route 
-              path="/admin/chats" 
-              element={isAdmin ? <ChatManagement /> : <Navigate to="/admin" />} 
-            />
-            <Route 
-              path="/admin/messages" 
-              element={isAdmin ? <MessagesManagement /> : <Navigate to="/admin" />} 
-            />
+    <BrowserRouter>
+      <Suspense fallback={<LayoutLoader />}>
+        <Routes>
+          {/* Public Routes */}
+          <Route
+            path="/login"
+            element={user ? <Navigate to="/" /> : <Login />}
+          />
 
-       
-            <Route path="/" element={
+          <Route
+            path="/admin"
+            element={isAdmin ? <Navigate to="/admin/dashboard" /> : <AdminLogin />}
+          />
+
+          {/* Admin Routes */}
+          <Route
+            path="/admin/dashboard"
+            element={isAdmin ? <Dashboard /> : <Navigate to="/admin" />}
+          />
+          <Route
+            path="/admin/users"
+            element={isAdmin ? <UserManagement /> : <Navigate to="/admin" />}
+          />
+          <Route
+            path="/admin/chats"
+            element={isAdmin ? <ChatManagement /> : <Navigate to="/admin" />}
+          />
+          <Route
+            path="/admin/messages"
+            element={isAdmin ? <MessagesManagement /> : <Navigate to="/admin" />}
+          />
+
+          {/* Protected User Routes */}
+          <Route
+            path="/"
+            element={
               user ? (
                 <SocketProvider>
                   <ProtectRoute user={user}>
@@ -103,9 +100,12 @@ const App = () => {
               ) : (
                 <Navigate to="/login" />
               )
-            } />
-            
-            <Route path="/chat/:chatId" element={
+            }
+          />
+
+          <Route
+            path="/chat/:chatId"
+            element={
               user ? (
                 <SocketProvider>
                   <ProtectRoute user={user}>
@@ -115,9 +115,12 @@ const App = () => {
               ) : (
                 <Navigate to="/login" />
               )
-            } />
-            
-            <Route path="/groups" element={
+            }
+          />
+
+          <Route
+            path="/groups"
+            element={
               user ? (
                 <SocketProvider>
                   <ProtectRoute user={user}>
@@ -127,9 +130,12 @@ const App = () => {
               ) : (
                 <Navigate to="/login" />
               )
-            } />
+            }
+          />
 
-            <Route path="/profile" element={
+          <Route
+            path="/profile"
+            element={
               user ? (
                 <SocketProvider>
                   <ProtectRoute user={user}>
@@ -139,16 +145,16 @@ const App = () => {
               ) : (
                 <Navigate to="/login" />
               )
-            } />
+            }
+          />
 
-            
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
+          {/* 404 */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Suspense>
 
-        <Toaster />
-      </BrowserRouter>
-    </ThemeProvider>
+      <Toaster />
+    </BrowserRouter>
   );
 };
 

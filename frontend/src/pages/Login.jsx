@@ -49,13 +49,13 @@ const Login = () => {
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    if (error) setError(''); // Clear error when user starts typing
+    if (error) setError(''); 
   };
 
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validate file size (max 5MB)
+     
       if (file.size > 5 * 1024 * 1024) {
         setError('Image size should be less than 5MB');
         toast({
@@ -66,7 +66,7 @@ const Login = () => {
         return;
       }
       
-      // Validate file type
+   
       if (!file.type.startsWith('image/')) {
         setError('Please select a valid image file');
         toast({
@@ -196,7 +196,7 @@ const Login = () => {
       dispatch(userExists(data.user));
       toast({
         title: "Account created!",
-        description: "Welcome to Chattu",
+        description: "Welcome to SyncX",
       });
     } catch (error) {
       const errorMessage = error?.response?.data?.message || 'Sign up failed. Please try again.';
@@ -214,7 +214,7 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Animated background elements */}
+     
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl"></div>
@@ -237,7 +237,7 @@ const Login = () => {
             </motion.div>
             <div>
               <CardTitle className="text-2xl font-bold text-card-foreground">
-                {isLogin ? 'Welcome Back' : 'Join Chattu'}
+                {isLogin ? 'Welcome Back' : 'Join SyncX'}
               </CardTitle>
               <CardDescription className="text-muted-foreground mt-2">
                 {isLogin ? 'Sign in to continue your conversations' : 'Create your account to get started'}
