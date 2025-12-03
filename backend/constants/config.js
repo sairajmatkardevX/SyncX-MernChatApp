@@ -1,9 +1,8 @@
 const corsOptions = {
   origin: [
     process.env.CLIENT_URL,
+    "https://sync-x-mern-chat-jz623tzhr-sairajmatkardevxs-projects.vercel.app",
     "http://localhost:5173",
-    "http://localhost:4173",
-    "http://127.0.0.1:5173",
   ],
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true,
@@ -11,4 +10,4 @@ const corsOptions = {
 
 const CHAT_APP_TOKEN = "SyncX-ChatAppToken";
 
-export { corsOptions, CHAT_APP_TOKEN  };
+export { corsOptions, CHAT_APP_TOKEN };

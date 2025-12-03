@@ -47,15 +47,23 @@ cloudinary.config({
 const app = express();
 const server = createServer(app);
 const io = new Server(server, {
-  cors: corsOptions,
+  cors: {
+    origin: [
+      process.env.CLIENT_URL,
+      "https://sync-x-mern-chat-jz623tzhr-sairajmatkardevxs-projects.vercel.app",
+      "http://localhost:5173"
+    ],
+    credentials: true
+  }
 });
+
 
 app.set("io", io);
 
 // Using Middlewares Here
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors(corsOptions));
 
 app.use("/api/v1/user", userRoute);
 app.use("/api/v1/chat", chatRoute);
