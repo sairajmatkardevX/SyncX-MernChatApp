@@ -14,7 +14,7 @@ import {
   deleteFilesFromCloudinary,
 } from "../utils/features.js";
 import { ErrorHandler } from "../utils/utility.js";
-
+import { CHAT_APP_TOKEN } from "../constants/config.js";
 
 const newUser = TryCatch(async (req, res, next) => {
   const { name, username, password, bio } = req.body;
@@ -68,16 +68,16 @@ const getMyProfile = TryCatch(async (req, res, next) => {
   });
 });
 
+
 const logout = TryCatch(async (req, res) => {
   return res
     .status(200)
-    .cookie("SyncX-ChatAppToken", "", { ...cookieOptions, maxAge: 0 })
+    .cookie(CHAT_APP_TOKEN, "", { ...cookieOptions, maxAge: 0 })
     .json({
       success: true,
       message: "Logged out successfully",
     });
 });
-
 const searchUser = TryCatch(async (req, res) => {
   const { name = "" } = req.query;
 

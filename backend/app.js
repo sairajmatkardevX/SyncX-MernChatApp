@@ -31,7 +31,7 @@ dotenv.config({
 
 const mongoURI = process.env.MONGO_URI;
 const port = process.env.PORT || 3000;
-const envMode = process.env.NODE_ENV.trim() || "PRODUCTION";
+const envMode = process.env.NODE_ENV?.trim() || "PRODUCTION";
 const adminSecretKey = process.env.ADMIN_SECRET_KEY || "adsasdsdfsdfsdfd";
 const userSocketIDs = new Map();
 const onlineUsers = new Set();
@@ -51,12 +51,12 @@ const io = new Server(server, {
     origin: [
       process.env.CLIENT_URL,
       "https://sync-x-mern-chat-app.vercel.app",
-      "http://localhost:5173"
+      "http://localhost:5173",
     ],
-    credentials: true
-  }
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE"], 
+  },
 });
-
 
 app.set("io", io);
 
@@ -68,10 +68,9 @@ app.use(cookieParser());
 app.use("/api/v1/user", userRoute);
 app.use("/api/v1/chat", chatRoute);
 app.use("/api/v1/admin", adminRoute);
+
 app.get("/api/v1/test-cloudinary", async (req, res) => {
   try {
-   
-    // Test upload with a simple base64 image
     const result = await cloudinary.uploader.upload(
       "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
       {
@@ -96,6 +95,7 @@ app.get("/api/v1/test-cloudinary", async (req, res) => {
     });
   }
 });
+
 app.get("/", (req, res) => {
   res.send("Hello World");
 });
@@ -113,11 +113,12 @@ io.on("connection", (socket) => {
   userSocketIDs.set(user._id.toString(), socket.id);
   onlineUsers.add(user._id.toString());
 
-  
   io.emit(ONLINE_USERS, Array.from(onlineUsers));
+
   socket.on(GET_ONLINE_USERS, () => {
     socket.emit(ONLINE_USERS, Array.from(onlineUsers));
   });
+
   socket.on(NEW_MESSAGE, async ({ chatId, members, message }) => {
     const messageForRealTime = {
       content: message,
@@ -161,11 +162,8 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
-  
     userSocketIDs.delete(user._id.toString());
     onlineUsers.delete(user._id.toString());
-
-    
     socket.broadcast.emit(ONLINE_USERS, Array.from(onlineUsers));
   });
 });

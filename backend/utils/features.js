@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import { v4 as uuid } from "uuid";
 import { v2 as cloudinary } from "cloudinary";
 import { getBase64, getSockets } from "../lib/helper.js";
+import { CHAT_APP_TOKEN } from "../constants/config.js";
 
 // ===================== CLOUDINARY CONFIG ===================== //
 cloudinary.config({
@@ -12,11 +13,13 @@ cloudinary.config({
 });
 
 // ===================== COOKIE OPTIONS ===================== //
+
 const cookieOptions = {
-  maxAge: 15 * 24 * 60 * 60 * 1000,
-  sameSite: "lax",
+  maxAge: 15 * 60 * 1000,
   httpOnly: true,
-  secure: false, 
+  secure: process.env.NODE_ENV?.trim() === "PRODUCTION",
+  sameSite: process.env.NODE_ENV?.trim() === "PRODUCTION" ? "none" : "lax", 
+  path: "/", 
 };
 
 // ===================== CONNECT DB ===================== //
@@ -36,7 +39,7 @@ const sendToken = (res, user, code, message) => {
 
   return res
     .status(code)
-    .cookie("SyncX-ChatAppToken", token, cookieOptions)
+    .cookie(CHAT_APP_TOKEN, token, cookieOptions)
     .json({
       success: true,
       user,
@@ -50,6 +53,7 @@ const emitEvent = (req, event, users, data) => {
   const usersSocket = getSockets(users);
   io.to(usersSocket).emit(event, data);
 };
+
 // ===================== UPLOAD SINGLE FILE TO CLOUDINARY ===================== //
 const uploadSingleFileToCloudinary = async (file) => {
   try {
@@ -89,8 +93,8 @@ const deleteSingleFileFromCloudinary = async (public_id) => {
     throw new Error("Failed to delete file from Cloudinary: " + err.message);
   }
 };
-// ===================== UPLOAD FILES TO CLOUDINARY ===================== //
 
+// ===================== UPLOAD FILES TO CLOUDINARY ===================== //
 const uploadFilesToCloudinary = async (files = []) => {
   const uploadPromises = files.map((file) =>
     cloudinary.uploader.upload(getBase64(file), {
