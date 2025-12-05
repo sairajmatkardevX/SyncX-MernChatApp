@@ -13,15 +13,13 @@ cloudinary.config({
 });
 
 // ===================== COOKIE OPTIONS ===================== //
-// 🔥 FIX: Check for "PRODUCTION" (uppercase)
-const isProduction = process.env.NODE_ENV?.trim().toUpperCase() === "PRODUCTION";
 
 const cookieOptions = {
-  maxAge: 15 * 24 * 60 * 60 * 1000, // 🔥 CHANGED: 15 days instead of 15 minutes
+  maxAge: 15 * 60 * 1000,
   httpOnly: true,
-  secure: isProduction, // 🔥 FIX: Use isProduction variable
-  sameSite: isProduction ? "none" : "lax", // 🔥 FIX: Use isProduction variable
-  path: "/",
+  secure: process.env.NODE_ENV?.trim() === "PRODUCTION",
+  sameSite: process.env.NODE_ENV?.trim() === "PRODUCTION" ? "none" : "lax", 
+  path: "/", 
 };
 
 // ===================== CONNECT DB ===================== //
@@ -38,14 +36,6 @@ const connectDB = (uri) => {
 // ===================== SEND TOKEN ===================== //
 const sendToken = (res, user, code, message) => {
   const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET);
-
-  // 🔥 ADDED: Log cookie settings for debugging (remove after testing)
-  console.log("Setting cookie with options:", {
-    ...cookieOptions,
-    tokenLength: token.length,
-    isProduction,
-    NODE_ENV: process.env.NODE_ENV
-  });
 
   return res
     .status(code)
