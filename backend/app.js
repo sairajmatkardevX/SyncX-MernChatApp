@@ -31,7 +31,9 @@ dotenv.config({
 
 const mongoURI = process.env.MONGO_URI;
 const port = process.env.PORT || 3000;
-const envMode = process.env.NODE_ENV?.trim() || "PRODUCTION";
+// 🔥 FIX: Make it case-insensitive
+// 🔥 FIX: Keep it uppercase "PRODUCTION"
+const envMode = process.env.NODE_ENV?.trim().toUpperCase() || "PRODUCTION";
 const adminSecretKey = process.env.ADMIN_SECRET_KEY || "adsasdsdfsdfsdfd";
 const userSocketIDs = new Map();
 const onlineUsers = new Set();
@@ -46,6 +48,8 @@ cloudinary.config({
 
 const app = express();
 const server = createServer(app);
+
+// 🔥 IMPROVED: Socket.io configuration with better settings
 const io = new Server(server, {
   cors: {
     origin: [
@@ -54,16 +58,33 @@ const io = new Server(server, {
       "http://localhost:5173",
     ],
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"], 
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   },
+  // 🔥 ADDED: Additional Socket.io settings for production
+  transports: ["websocket", "polling"], // Allow both transports
+  allowEIO3: true, // Backward compatibility
+  pingTimeout: 60000, // 60 seconds
+  pingInterval: 25000, // 25 seconds
+  upgradeTimeout: 30000, // 30 seconds
+  maxHttpBufferSize: 1e8, // 100 MB
 });
 
 app.set("io", io);
 
-// Using Middlewares Here
+// 🔥 IMPORTANT: CORS must come before other middlewares
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
+
+// 🔥 ADDED: Health check endpoint for UptimeRobot
+app.get("/api/v1/health", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Server is running",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+  });
+});
 
 app.use("/api/v1/user", userRoute);
 app.use("/api/v1/chat", chatRoute);
@@ -100,20 +121,34 @@ app.get("/", (req, res) => {
   res.send("Hello World");
 });
 
+// 🔥 IMPROVED: Socket authentication with better error handling
 io.use((socket, next) => {
   cookieParser()(
     socket.request,
-    socket.request.res,
-    async (err) => await socketAuthenticator(err, socket, next)
+    socket.request.res || {},
+    async (err) => {
+      try {
+        await socketAuthenticator(err, socket, next);
+      } catch (error) {
+        console.error("Socket authentication error:", error);
+        next(error);
+      }
+    }
   );
 });
 
 io.on("connection", (socket) => {
   const user = socket.user;
+  
+  console.log("User connected:", user.name, socket.id);
+  
   userSocketIDs.set(user._id.toString(), socket.id);
   onlineUsers.add(user._id.toString());
 
+  // 🔥 IMPROVED: Emit to all clients including sender
   io.emit(ONLINE_USERS, Array.from(onlineUsers));
+  
+  console.log("Online users:", Array.from(onlineUsers).length);
 
   socket.on(GET_ONLINE_USERS, () => {
     socket.emit(ONLINE_USERS, Array.from(onlineUsers));
@@ -147,7 +182,7 @@ io.on("connection", (socket) => {
     try {
       await Message.create(messageForDB);
     } catch (error) {
-      throw new Error(error);
+      console.error("Error saving message:", error);
     }
   });
 
@@ -162,9 +197,15 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
+    console.log("User disconnected:", user.name, socket.id);
+    
     userSocketIDs.delete(user._id.toString());
     onlineUsers.delete(user._id.toString());
-    socket.broadcast.emit(ONLINE_USERS, Array.from(onlineUsers));
+    
+    // 🔥 FIX: Use io.emit instead of socket.broadcast.emit for consistency
+    io.emit(ONLINE_USERS, Array.from(onlineUsers));
+    
+    console.log("Online users after disconnect:", Array.from(onlineUsers).length);
   });
 });
 
@@ -172,6 +213,8 @@ app.use(errorMiddleware);
 
 server.listen(port, () => {
   console.log(`Server is running on port ${port} in ${envMode} Mode`);
+  console.log(`Environment: ${process.env.NODE_ENV}`);
+  console.log(`Client URL: ${process.env.CLIENT_URL}`);
 });
 
 export { envMode, adminSecretKey, userSocketIDs };
